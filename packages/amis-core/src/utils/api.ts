@@ -74,7 +74,11 @@ export function buildApi(
   }
 
   if (api.requestAdaptor && typeof api.requestAdaptor === 'string') {
-    api.requestAdaptor = str2function(api.requestAdaptor, 'api') as any;
+    api.requestAdaptor = str2function(
+      api.requestAdaptor,
+      'api',
+      'context'
+    ) as any;
   }
 
   if (api.adaptor && typeof api.adaptor === 'string') {
@@ -82,7 +86,8 @@ export function buildApi(
       api.adaptor,
       'payload',
       'response',
-      'api'
+      'api',
+      'context'
     ) as any;
   }
 
@@ -454,7 +459,7 @@ export function wrapFetcher(
 
     if (api.requestAdaptor) {
       debug('api', 'before requestAdaptor', api);
-      api = api.requestAdaptor(api) || api;
+      api = api.requestAdaptor(api, data) || api;
       debug('api', 'after requestAdaptor', api);
     }
 
@@ -498,11 +503,11 @@ export function wrapFetcher(
     );
 
     if (api.method?.toLocaleLowerCase() === 'jsonp') {
-      return wrapAdaptor(jsonpFetcher(api), api);
+      return wrapAdaptor(jsonpFetcher(api), api, data);
     }
 
     if (api.method?.toLocaleLowerCase() === 'js') {
-      return wrapAdaptor(jsFetcher(fn, api), api);
+      return wrapAdaptor(jsFetcher(fn, api), api, data);
     }
 
     if (typeof api.cache === 'number' && api.cache > 0) {
@@ -511,7 +516,8 @@ export function wrapFetcher(
         apiCache
           ? (apiCache as ApiCacheConfig).cachedPromise
           : setApiCache(api, fn(api)),
-        api
+        api,
+        data
       );
     }
     // IE 下 get 请求会被缓存，所以自动加个时间戳
@@ -523,7 +529,7 @@ export function wrapFetcher(
         api.url = api.url + `&${timeStamp}`;
       }
     }
-    return wrapAdaptor(fn(api), api);
+    return wrapAdaptor(fn(api), api, data);
   };
 
   (wrappedFetcher as any)._wrappedFetcher = true;
@@ -531,13 +537,17 @@ export function wrapFetcher(
   return wrappedFetcher;
 }
 
-export function wrapAdaptor(promise: Promise<fetcherResult>, api: ApiObject) {
+export function wrapAdaptor(
+  promise: Promise<fetcherResult>,
+  api: ApiObject,
+  context: any
+) {
   const adaptor = api.adaptor;
   return adaptor
     ? promise
         .then(async response => {
           debug('api', 'before adaptor data', (response as any).data);
-          let result = adaptor((response as any).data, response, api);
+          let result = adaptor((response as any).data, response, api, context);
 
           if (result?.then) {
             result = await result;
