@@ -447,7 +447,8 @@ export function responseAdaptor(ret: fetcherResult, api: ApiObject) {
 
 export function wrapFetcher(
   fn: (config: fetcherConfig) => Promise<fetcherResult>,
-  tracker?: (eventTrack: EventTrack, data: any) => void
+  tracker?: (eventTrack: EventTrack, data: any) => void,
+  getContextConfig?: () => Object
 ) {
   // 避免重复处理
   if ((fn as any)._wrappedFetcher) {
@@ -459,8 +460,9 @@ export function wrapFetcher(
     data: object,
     options?: object
   ) {
+    let contextConfig = getContextConfig?.() || {};
+    data = Object.assign(contextConfig, cloneObject(data));
     api = buildApi(api, data, options) as ApiObject;
-
     if (api.requestAdaptor) {
       debug('api', 'before requestAdaptor', api);
       api = (await api.requestAdaptor(api, data)) || api;

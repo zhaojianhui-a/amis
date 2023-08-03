@@ -104,6 +104,7 @@ export interface RenderOptions
   session?: string;
   theme?: string;
   fetcher?: (config: fetcherConfig) => Promise<fetcherResult>;
+  getContextConfig?: () => Object;
 }
 
 export interface fetcherConfig {
@@ -373,7 +374,11 @@ export function updateEnv(options: Partial<RenderOptions>, session = 'global') {
   };
 
   if (options.fetcher) {
-    options.fetcher = wrapFetcher(options.fetcher, options.tracker) as any;
+    options.fetcher = wrapFetcher(
+      options.fetcher,
+      options.tracker,
+      options.getContextConfig
+    ) as any;
   }
 
   if (options.confirm) {

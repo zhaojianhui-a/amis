@@ -215,7 +215,11 @@ export function render(
       ...defaultOptions,
       ...options,
       fetcher: options.fetcher
-        ? wrapFetcher(options.fetcher, options.tracker)
+        ? wrapFetcher(
+            options.fetcher,
+            options.tracker,
+            options.getContextConfig
+          )
         : defaultOptions.fetcher,
       confirm: promisify(
         options.confirm || defaultOptions.confirm || window.confirm
